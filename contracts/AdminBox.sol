@@ -15,8 +15,8 @@ contract AdminBox is Initializable {
         _admin = admin;
     }
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() initializer {}
+  
+    
 
     // Stores a new value in the contract
     function store(uint256 value) public {
