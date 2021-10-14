@@ -3,6 +3,11 @@ import './App.css';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
 import { web3init, web3Reload, swapDaiEth, swap, uniswapSdkP } from './store/connectSlice';
+import { create } from 'ipfs-http-client'
+import ipfs from './ipfs'
+
+
+
 
 function App() {
   const address = useSelector((state) => {
@@ -33,6 +38,7 @@ function App() {
 
   }, []);
 
+
   // const currentAccount = async () => {
   //   await web3.personal.sign(web3.fromUtf8("Hello from Toptal!"), web3.eth.coinbase, console.log);
 
@@ -47,6 +53,44 @@ function App() {
   }
 
   console.log(address)
+  // const [fileBuffer, setFileBuffer] = useState(Buffer(""))
+  const [fileUrl, setFileUrl] = useState(null)
+  //const [file, setFile] = useState(null)
+
+  let fileBuffer = null
+  const captureFile = (event) => {
+    event.preventDefault();
+    //process for IPFS
+    const file = event.target.files[0]
+    const reader = new window.FileReader()
+    reader.readAsArrayBuffer(file)
+    reader.onloadend = () => {
+      fileBuffer = Buffer(reader.result)
+
+    }
+    console.log()
+  }
+
+  const uploadFile = async (event) => {
+    event.preventDefault();
+
+    console.log('submitting form')
+    try {
+
+      await ipfs.files.add(fileBuffer, (error, result) => {
+        console.log(result)
+        setFileUrl(result[0].hash)
+        if (error)
+          console.log(error)
+      })
+    } catch (error) {
+      console.log("error in uploading File", error)
+    }
+    console.log(fileUrl)
+  }
+
+
+
 
   return (
     <div className="App">
@@ -68,6 +112,12 @@ function App() {
       <button onClick={async () => signmsg()}>Sign</button><br></br>
       <button onClick={() => dispatch(uniswapSdkP())}>click</button><br></br>
       <div>{accessMsg}</div>
+      <div>
+        <form onSubmit={uploadFile}>
+          <input type='file' onChange={captureFile} />
+          <input type='submit' />
+        </form>
+      </div>
 
 
 
