@@ -16,9 +16,9 @@ contract Nft is ERC721URIStorage {
         address[] owners;
         uint256 creationTime;
     }
-    mapping(uint256=>NftDetails) _NftDetails;
+    mapping(uint256=>NftDetails) private _NftDetails;
 
-    constructor(address marketplaceAddress) ERC721("Metaverse", "METT") {
+    constructor(address marketplaceAddress) ERC721("MyNFTs", "METT") {
         contractAddress = marketplaceAddress;
     }
 
@@ -27,17 +27,21 @@ contract Nft is ERC721URIStorage {
         _NftDetails[_newItemId].creationTime=getTime();
     }
 
+    function getNftDetails(uint256 _tokenId)public view returns(NftDetails memory){
+        return _NftDetails[_tokenId];
+    }
+
     function createToken(string memory tokenURI) public returns (uint) {
         _tokenIds.increment();
         uint256 newItemId = _tokenIds.current();
-        setNftDetails(newItemId,msg.sender)
+        setNftDetails(newItemId,msg.sender);
         _mint(msg.sender, newItemId);
         _setTokenURI(newItemId, tokenURI);
         setApprovalForAll(contractAddress, true);
         return newItemId;
     }
     //returns the total number of Nfts minted from this contract
-    function totalNftminted() public returns(uint256){
+    function totalSupply() public view returns(uint256){
         return _tokenIds.current();
     }
 

@@ -2,7 +2,7 @@ import logo from './logo.svg';
 import './App.css';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
-import { web3init, web3Reload, swapDaiEth, swap, uniswapSdkP } from './store/connectSlice';
+import { web3init, web3Reload, swapDaiEth, swap, uniswapSdkP, ethersinit, ethersinitReload } from './store/connectSlice';
 import { create } from 'ipfs-http-client'
 import ipfs from './ipfs'
 
@@ -34,8 +34,8 @@ function App() {
     }
   }
   useEffect(() => {
-    dispatch(web3Reload())
-
+    //  dispatch(web3Reload())
+    dispatch(ethersinitReload())
   }, []);
 
 
@@ -47,7 +47,8 @@ function App() {
   const connectWallet = () => {
     console.log("button")
 
-    dispatch(web3init())
+    // dispatch(web3init())
+    dispatch(ethersinit())
     console.log(address)
 
   }

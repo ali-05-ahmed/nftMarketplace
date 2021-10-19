@@ -12,7 +12,7 @@ import {
 import Web3 from 'web3'
 import UniswapV2Router02 from '../contract/uniswapAbi.json'
 import WETHcon from '../contract/WETHabi.json'
-
+import { ethers } from 'ethers'
 
 export const web3init = createAsyncThunk(
     "web3init",
@@ -39,6 +39,38 @@ export const web3init = createAsyncThunk(
     }
 )
 
+export const ethersinit = createAsyncThunk(
+    "web3init",
+    async (data, thunkAPI) => {
+        try {
+            await window.ethereum.enable()
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const signer = provider.getSigner();
+            console.log("Account:", await signer.getAddress());
+            return {
+            }
+        }
+        catch (error) {
+
+        }
+    }
+)
+export const ethersinitReload = createAsyncThunk(
+    "web3init",
+    async (data, thunkAPI) => {
+        try {
+
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const signer = provider.getSigner();
+            console.log("Account:", await signer.getAddress());
+            return {
+            }
+        }
+        catch (error) {
+
+        }
+    }
+)
 
 export const web3Reload = createAsyncThunk(
     "web3Reload",
