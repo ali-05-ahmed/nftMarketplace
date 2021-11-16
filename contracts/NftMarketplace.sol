@@ -29,7 +29,7 @@ contract NftMarketplace is ReentrancyGuardUpgradeable {
   function initialize(address auctionContract)public initializer{
     owner = payable(msg.sender);
     listingPrice = 0.025 ether;
-    companyCut = 5; 
+    companyCut = 20; 
     auction =Auction(auctionContract);
   }
 

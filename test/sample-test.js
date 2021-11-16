@@ -89,31 +89,33 @@ describe("NFT", function () {
     expect(await nft.ownerOf(2)).to.equal(nftMarketplace.address);
 
   });
-  it("it Should create one Market item and start auction of the same token must fail  ", async function () {
-    const createMTTx = await nftMarketplace.createMarketItem(
-      nft.address,
-      1,
-      10,
-      true,
-      60);
+  // it("it Should create one Market item and start auction of the same token must fail  ", async function () {
+  //   const createMTTx = await nftMarketplace.createMarketItem(
+  //     nft.address,
+  //     1,
+  //     10,
+  //     true,
+  //     60);
 
-    // wait until the transaction is mined
-    await createMTTx.wait();
+  //   // wait until the transaction is mined
+  //   await createMTTx.wait();
 
-    expect(await nft.ownerOf(1)).to.equal(nftMarketplace.address);
-    expect(await auction.getSeller(1, nft.address)).to.equal(_.address);
-    let timeleft = await auction.auctionTimeLeft(1, nft.address)
-    timeleft = await ethers.BigNumber.from(timeleft).toString()
-    console.log(timeleft)
+  //   expect(await nft.ownerOf(1)).to.equal(nftMarketplace.address);
+  //   expect(await auction.getSeller(1, nft.address)).to.equal(_.address);
+  //   let timeleft = await auction.auctionTimeLeft(1, nft.address)
+  //   timeleft = await ethers.BigNumber.from(timeleft).toString()
+  //   console.log(timeleft)
 
-  });
+  // });
   it("Should buy one Market item   ", async function () {
-    const saleMTTx = await nftMarketplace.createMarketSale(
-      nft.address,
-      1);
+    const _value = await ethers.utils.parseUnits('10', 'wei')
+    console.log("wei :", _value)
+    // const saleMTTx = await nftMarketplace.createMarketSale(
+    //   nft.address,
+    //   2, { value: _value });
 
-    // wait until the transaction is mined
-    await saleMTTx.wait();
+    // // wait until the transaction is mined
+    // await saleMTTx.wait();
 
 
 
