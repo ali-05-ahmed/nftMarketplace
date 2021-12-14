@@ -7,45 +7,34 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 import "hardhat/console.sol";
 
-contract Nft is ERC721URIStorage {
+contract NFT is ERC721URIStorage {
     using Counters for Counters.Counter;
-    Counters.Counter private _tokenIds;
+    Counters.Counter public _tokenIds;
     address contractAddress;
+    string public baseURI;
 
-    struct NftDetails{
-        address[] owners;
-        uint256 creationTime;
-    }
-    mapping(uint256=>NftDetails) private _NftDetails;
-
-    constructor(address marketplaceAddress) ERC721("MyNFTs", "METT") {
+    constructor(address marketplaceAddress,
+    string memory name,
+    string memory symbol,
+    string memory baseURI_) ERC721(name,symbol) {
         contractAddress = marketplaceAddress;
+        baseURI = baseURI_;
     }
 
-    function setNftDetails(uint256 _newItemId,address owner)private{
-        _NftDetails[_newItemId].owners.push(owner);
-        _NftDetails[_newItemId].creationTime=getTime();
-    }
-
-    function getNftDetails(uint256 _tokenId)public view returns(NftDetails memory){
-        return _NftDetails[_tokenId];
-    }
-
-    function createToken(string memory tokenURI) public returns (uint) {
+    function createToken(string memory URI) public virtual returns (uint) {
         _tokenIds.increment();
         uint256 newItemId = _tokenIds.current();
-        setNftDetails(newItemId,msg.sender);
+
         _mint(msg.sender, newItemId);
-        _setTokenURI(newItemId, tokenURI);
+        _setTokenURI(newItemId, URI);
         setApprovalForAll(contractAddress, true);
         return newItemId;
     }
-    //returns the total number of Nfts minted from this contract
-    function totalSupply() public view returns(uint256){
-        return _tokenIds.current();
+
+    function _baseURI() internal view virtual override returns (string memory) {
+        return baseURI;
     }
 
-    function getTime() private view returns(uint256){
-        return block.timestamp;
-    }
+    
+
 }

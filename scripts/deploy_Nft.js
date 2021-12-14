@@ -17,7 +17,7 @@ async function main() {
     // We get the contract to deploy
 
     const Nft = await ethers.getContractFactory("Nft");
-    const nft = await Nft.deploy("0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0");
+    const nft = await Nft.deploy("0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0", "BaseMinter", "MP", "www.google.com");
 
     await nft.deployed();
 

@@ -8,32 +8,25 @@ import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
-import "./Auction.sol";
+import "./AuctionV1.sol";
 
 
 contract NftMarketplace is ReentrancyGuardUpgradeable {
     
-  uint256 private tokenId;
-    
   using Counters for Counters.Counter;
   Counters.Counter private _itemIds;
   Counters.Counter private _itemsSold;
-
   address payable owner;
-  uint256 listingPrice ;
-  // company's cut in each transfer
-    uint256 public companyCut;
+  uint256 listingPrice = 0.025 ether;
+  AuctionV1 auction ;
 
-  Auction auction ;
-  
-  function initialize(address auctionContract)public initializer{
+  constructor() {
     owner = payable(msg.sender);
-    listingPrice = 0.025 ether;
-    companyCut = 20; 
-    auction =Auction(auctionContract);
+    auction = new AuctionV1();
   }
 
   struct MarketItem {
+
     uint itemId;
     address nftContract;
     uint256 tokenId;
@@ -41,12 +34,14 @@ contract NftMarketplace is ReentrancyGuardUpgradeable {
     address payable owner;
     uint256 price;
     bool sold;
-    bool _auction;
+    bool isAuction;
+
   }
-  
-  mapping(address=> mapping(uint256=>bool)) private NFTexist;
+
   mapping(uint256 => MarketItem) private idToMarketItem;
+
   
+
 
   event MarketItemCreated (
     uint indexed itemId,
@@ -55,15 +50,11 @@ contract NftMarketplace is ReentrancyGuardUpgradeable {
     address seller,
     address owner,
     uint256 price,
-    bool sold,
-    bool _auction
+    bool sold
   );
 
-  //change price if auction is not in progress
-  function setPrice(uint256 _itemId , uint256 _price) public {
-    require(msg.sender==idToMarketItem[_itemId].seller, "Invalid owner");
-    require(idToMarketItem[_itemId]._auction == false , " Auction in progress");
-    idToMarketItem[_itemId].price=_price;
+  function auction_addr() public view returns(address){
+    return address(auction);
   }
 
   /* Returns the listing price of the contract */
@@ -76,16 +67,13 @@ contract NftMarketplace is ReentrancyGuardUpgradeable {
     address nftContract,
     uint256 tokenId,
     uint256 price,
-    bool _auction,
-    uint256 _seconds
+    bool _isAuction,
+    uint256 _endingUnix
   ) public payable nonReentrant {
-    require(NFTexist[nftContract][tokenId] == false, "NFT already Exist on the market");
     require(price > 0, "Price must be at least 1 wei");
-  //  require(msg.value == listingPrice, "Price must be equal to listing price");
-  NFTexist[nftContract][tokenId] = true;
-  if(_auction == true)
-  auction.createAuction(price, _seconds , nftContract, tokenId, msg.sender);
-   
+    if(_isAuction)
+    auction.createAuction(price,_endingUnix,nftContract,tokenId, msg.sender);
+
     _itemIds.increment();
     uint256 itemId = _itemIds.current();
   
@@ -97,7 +85,7 @@ contract NftMarketplace is ReentrancyGuardUpgradeable {
       payable(address(0)),
       price,
       false,
-      _auction
+      _isAuction
     );
 
     IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
@@ -109,17 +97,8 @@ contract NftMarketplace is ReentrancyGuardUpgradeable {
       msg.sender,
       address(0),
       price,
-      false,
-      _auction
+      false
     );
-  }
-
-  function startAuction(uint256 itemId,uint256 _endingUnix)public {
-    MarketItem memory item = idToMarketItem[itemId];
-require(item._auction==false,"auction in progress");
-require(NFTexist[item.nftContract][item.tokenId]==true , "NFT Dont Exist on market place");
-auction.createAuction(item.price, _endingUnix , item.nftContract, item.tokenId, msg.sender);
-item._auction==true;
   }
 
   /* Creates the sale of a marketplace item */
@@ -128,29 +107,32 @@ item._auction==true;
     address nftContract,
     uint256 itemId
     ) public payable nonReentrant {
-      uint price;
-      uint tokenId = idToMarketItem[itemId].tokenId;
-      address buyer;
-    if(idToMarketItem[itemId]._auction == true){
-          require(auction._checkAuctionStatus(tokenId,nftContract) == false , "Auction in progress cant pay");
-          (buyer,price) = auction.getBidWinner(tokenId,nftContract);
-          require(buyer == msg.sender , "Faulty buyer");
-          require(msg.value == price && price > 0, "Please submit the asking price in order to complete the purchase");
-          auction.concludeAuction(tokenId,nftContract);
-          idToMarketItem[itemId]._auction = false;
+      MarketItem memory marketitem = idToMarketItem[itemId];
+    if(marketitem.isAuction){
+     require(auction.canSell(nftContract,marketitem.tokenId)==true,"this Auction is in progress");
+     uint256 tokenId = marketitem.tokenId;
+     address buyer = auction.getHighestBidder(nftContract,marketitem.tokenId);
+     auction.concludeAuction(tokenId,nftContract,msg.sender);
+
+    IERC721(nftContract).transferFrom(address(this), buyer , tokenId);
+    idToMarketItem[itemId].owner = payable(msg.sender);
+    idToMarketItem[itemId].sold = true;
+    _itemsSold.increment();
+
     }
-    else{
-    price = idToMarketItem[itemId].price;
-    require(msg.value == price, "Please submit the asking price in order to complete the purchase");  
-    }
-  
+    else {
+
+    uint price = idToMarketItem[itemId].price;
+    uint tokenId = idToMarketItem[itemId].tokenId;
+    require(msg.value == price, "Please submit the asking price in order to complete the purchase");
+
     idToMarketItem[itemId].seller.transfer(msg.value);
     IERC721(nftContract).transferFrom(address(this), msg.sender, tokenId);
     idToMarketItem[itemId].owner = payable(msg.sender);
     idToMarketItem[itemId].sold = true;
-    NFTexist[nftContract][tokenId] = false;
     _itemsSold.increment();
-    payable(owner).transfer(listingPrice);
+  
+    }
   }
 
   /* Returns all unsold market items */
@@ -218,4 +200,5 @@ item._auction==true;
     }
     return items;
   }
+
 }
